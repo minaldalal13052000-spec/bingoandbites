@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, set, onValue, update, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getDatabase, ref, set, onValue, update, increment, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyBEIL7wQrJ3n2rnGr9FsMPH25KnBSihHDg",
@@ -16,15 +16,36 @@ const db = getDatabase(app);
 let currentRound = 1;
 let myName = "";
 
-// --- HOST LOGIC ---
-window.callNextNumber = function() {
-    const nextNum = Math.floor(Math.random() * 75) + 1;
+// --- HOST LOGIC: NO REPEATS ---
+window.callNextNumber = async function() {
+    const historyRef = ref(db, 'gameState/history');
+    const snapshot = await get(historyRef);
+    let history = snapshot.val() || [];
+
+    if (history.length >= 75) {
+        alert("All numbers called! Please reset the game.");
+        return;
+    }
+
+    let nextNum;
+    do {
+        nextNum = Math.floor(Math.random() * 75) + 1;
+    } while (history.includes(nextNum));
+
+    history.push(nextNum);
     set(ref(db, 'gameState/currentNumber'), nextNum);
+    set(historyRef, history);
 };
 
-// Check for Admin mode in URL
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('admin') === 'true') {
+// Secret Reset for Host (Run this in console if needed)
+window.resetGame = function() {
+    set(ref(db, 'gameState'), { currentNumber: "--", history: [] });
+    set(ref(db, 'players'), {});
+    alert("Game Reset!");
+};
+
+// Admin Check
+if (new URLSearchParams(window.location.search).get('admin') === 'true') {
     document.getElementById('admin-controls').style.display = 'block';
 }
 
@@ -49,7 +70,7 @@ function generateBoard() {
             cell.textContent = "FREE"; cell.classList.add('stamped');
         } else {
             cell.textContent = item;
-            cell.onclick = () => { cell.classList.toggle('stamped'); if (navigator.vibrate) navigator.vibrate(50); };
+            cell.onclick = () => { cell.classList.toggle('stamped'); };
         }
         board.appendChild(cell);
     });
@@ -57,10 +78,17 @@ function generateBoard() {
 
 window.claimBingo = function() {
     update(ref(db, 'players/' + myName), { totalScore: increment(10) });
+    
+    // Anti-Cheating: Board stays visible. We just update the Round counter.
     if (currentRound < 4) {
+        alert("Bingo Recorded! Moving to Round " + (currentRound + 1) + ". Keep your current board!");
         currentRound++;
         document.getElementById('round-title').innerText = "ROUND " + currentRound;
-        generateBoard();
+        // Optional: Only call generateBoard() if you want a fresh board per round. 
+        // If you want them to keep the same board for all 4 rounds, comment out the line below:
+        generateBoard(); 
+    } else {
+        alert("Final Round Won! Check the Leaderboard.");
     }
 };
 
