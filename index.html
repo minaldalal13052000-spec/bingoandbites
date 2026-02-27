@@ -21,12 +21,12 @@
         .cell.stamped { background: var(--orange) !important; color: white !important; }
         .btn-main { background: var(--pink); color: white; border: none; padding: 15px; border-radius: 50px; font-family: 'Fredoka One'; font-size: 1.2rem; width: 100%; cursor: pointer; margin-top: 10px; }
         .btn-win { background: var(--pink); color: white; border: none; padding: 8px 15px; border-radius: 10px; font-family: 'Fredoka One'; font-size: 1rem; }
-        .btn-win:disabled { background: #999; }
+        .btn-new-game { background: var(--teal) !important; }
         .round-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; background: var(--cream); padding: 10px; border-radius: 10px; box-sizing: border-box; }
         .leaderboard-drawer { width: 95%; background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 15px; color: white; margin-top: 15px; box-sizing: border-box; }
         #score-list { list-style: none; padding: 0; margin: 0; }
         #score-list li { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(26, 83, 92, 0.9); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(26, 83, 92, 0.85); display: none; justify-content: center; align-items: center; z-index: 1000; }
         .overlay-content { background: var(--cream); padding: 30px; border-radius: 20px; border: 8px solid var(--orange); text-align: center; width: 85%; }
         input { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--teal); font-size: 1rem; box-sizing: border-box; }
     </style>
@@ -35,8 +35,8 @@
     <div id="winner-overlay" class="overlay">
         <div class="overlay-content">
             <h2 id="winner-announcement" style="font-family:'Fredoka One'; color:var(--pink); font-size: 2rem;">BINGO!</h2>
-            <p>Ready for the next round?</p>
-            <button onclick="startNextRound()" class="btn-main" style="background:var(--teal);">START NEXT ROUND</button>
+            <p>Verification time!</p>
+            <button onclick="closeOverlay()" class="btn-main">VIEW BOARD TO VERIFY</button>
         </div>
     </div>
 
@@ -46,6 +46,7 @@
             <div class="current-call"><small>CALLING</small><div id="current-number">--</div></div>
             <div id="admin-controls" style="display:none; margin-bottom: 10px;">
                 <button onclick="callNextNumber()" class="btn-main" style="background:var(--orange); margin: 0;">DRAW NUMBER</button>
+                <button onclick="resetSystem()" style="background:none; border:none; color:white; font-size:10px; margin-top:5px; text-decoration:underline;">RESET DATA</button>
             </div>
         </header>
 
@@ -57,7 +58,7 @@
         <div id="game-area" style="display:none; width: 100%; flex-direction: column; align-items: center;">
             <div class="round-bar">
                 <span id="round-text" style="font-weight:bold;">ROUND 1</span>
-                <button id="bingo-btn" onclick="claimBingo()" class="btn-win">BINGO!</button>
+                <button id="action-btn" onclick="claimBingo()" class="btn-win">BINGO!</button>
             </div>
             <div id="bingo-board" class="mobile-grid"></div>
         </div>
@@ -110,20 +111,22 @@
                 else {
                     cell.innerText = item;
                     cell.onclick = function() { 
-                        if (!document.getElementById('bingo-btn').disabled) {
-                            this.classList.toggle('stamped');
-                            if(navigator.vibrate) navigator.vibrate(40);
-                        }
+                        this.classList.toggle('stamped');
+                        if(navigator.vibrate) navigator.vibrate(40);
                     };
                 }
                 board.appendChild(cell);
             });
+            // Reset button to Bingo state
+            const btn = document.getElementById('action-btn');
+            btn.innerText = "BINGO!";
+            btn.classList.remove('btn-new-game');
+            btn.onclick = claimBingo;
         };
 
         window.callNextNumber = function() {
             db.ref('gameState/history').get().then((snap) => {
                 let history = snap.val() || [];
-                if (history.length >= 75) return alert("All numbers called!");
                 let nextNum;
                 do { nextNum = Math.floor(Math.random() * 75) + 1; } while (history.includes(nextNum));
                 history.push(nextNum);
@@ -134,10 +137,18 @@
         window.claimBingo = function() {
             db.ref('gameState').update({ lastWinner: myName });
             db.ref('players/' + myName + '/totalScore').set(firebase.database.ServerValue.increment(10));
-            document.getElementById('bingo-btn').disabled = true;
+            
+            // Transform button for winner
+            const btn = document.getElementById('action-btn');
+            btn.innerText = "NEW GAME";
+            btn.classList.add('btn-new-game');
+            btn.onclick = startNextRound;
         };
 
-        // This is now triggered by the player clicking the button on the overlay
+        window.closeOverlay = function() {
+            document.getElementById('winner-overlay').style.display = 'none';
+        };
+
         window.startNextRound = function() {
             db.ref('gameState').update({ lastWinner: null, history: [], currentNumber: "--", roundSignal: Date.now() });
         };
@@ -153,6 +164,12 @@
                 document.getElementById('winner-announcement').innerText = winner + " GOT BINGO!";
                 overlay.style.display = 'flex';
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                
+                // For non-winners, transform their button to New Game too
+                const btn = document.getElementById('action-btn');
+                btn.innerText = "NEW GAME";
+                btn.classList.add('btn-new-game');
+                btn.onclick = startNextRound;
             } else {
                 overlay.style.display = 'none';
             }
@@ -163,7 +180,6 @@
                 currentRound++;
                 if (currentRound <= 4) {
                     document.getElementById('round-text').innerText = "ROUND " + currentRound;
-                    document.getElementById('bingo-btn').disabled = false;
                     generateBoard();
                 }
             }
@@ -179,6 +195,8 @@
                 });
             }
         });
+
+        window.resetSystem = () => { if(confirm("Reset entire game?")) db.ref().set(null).then(()=>location.reload()); };
     </script>
 </body>
 </html>
