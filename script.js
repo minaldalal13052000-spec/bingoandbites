@@ -15,45 +15,19 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 let currentRound = 1;
 let myName = "";
+let myColor = "#FF2E63";
+const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'true';
 
-// --- HOST LOGIC: NO REPEATS ---
-window.callNextNumber = async function() {
-    const historyRef = ref(db, 'gameState/history');
-    const snapshot = await get(historyRef);
-    let history = snapshot.val() || [];
+if (isAdmin) document.getElementById('admin-controls').style.display = 'block';
 
-    if (history.length >= 75) {
-        alert("All numbers called! Please reset the game.");
-        return;
-    }
-
-    let nextNum;
-    do {
-        nextNum = Math.floor(Math.random() * 75) + 1;
-    } while (history.includes(nextNum));
-
-    history.push(nextNum);
-    set(ref(db, 'gameState/currentNumber'), nextNum);
-    set(historyRef, history);
-};
-
-// Secret Reset for Host (Run this in console if needed)
-window.resetGame = function() {
-    set(ref(db, 'gameState'), { currentNumber: "--", history: [] });
-    set(ref(db, 'players'), {});
-    alert("Game Reset!");
-};
-
-// Admin Check
-if (new URLSearchParams(window.location.search).get('admin') === 'true') {
-    document.getElementById('admin-controls').style.display = 'block';
-}
-
-// --- PLAYER LOGIC ---
 window.startGame = function() {
     myName = document.getElementById('username').value.trim();
-    if(!myName) return alert("Please enter your name!");
-    set(ref(db, 'players/' + myName), { name: myName, totalScore: 0 });
+    myColor = document.querySelector('input[name="pColor"]:checked').value;
+    if(!myName) return;
+    
+    // Save name and color to Firebase
+    set(ref(db, 'players/' + myName), { name: myName, totalScore: 0, color: myColor });
+    
     document.getElementById('setup').style.display = 'none';
     document.getElementById('game-area').style.display = 'block';
     generateBoard();
@@ -67,43 +41,62 @@ function generateBoard() {
         const cell = document.createElement('div');
         cell.classList.add('cell');
         if (index === 12) {
-            cell.textContent = "FREE"; cell.classList.add('stamped');
+            cell.textContent = "FREE"; 
+            cell.classList.add('stamped');
+            cell.style.backgroundColor = myColor; // Set personalized color
         } else {
             cell.textContent = item;
-            cell.onclick = () => { cell.classList.toggle('stamped'); };
+            cell.onclick = () => { 
+                cell.classList.toggle('stamped'); 
+                cell.style.backgroundColor = cell.classList.contains('stamped') ? myColor : "white";
+                if(navigator.vibrate) navigator.vibrate(40); 
+            };
         }
         board.appendChild(cell);
     });
 }
 
-window.claimBingo = function() {
-    update(ref(db, 'players/' + myName), { totalScore: increment(10) });
-    
-    // Anti-Cheating: Board stays visible. We just update the Round counter.
-    if (currentRound < 4) {
-        alert("Bingo Recorded! Moving to Round " + (currentRound + 1) + ". Keep your current board!");
-        currentRound++;
-        document.getElementById('round-title').innerText = "ROUND " + currentRound;
-        // Optional: Only call generateBoard() if you want a fresh board per round. 
-        // If you want them to keep the same board for all 4 rounds, comment out the line below:
-        generateBoard(); 
-    } else {
-        alert("Final Round Won! Check the Leaderboard.");
+// Global winner sync
+onValue(ref(db, 'gameState/lastWinner'), (snapshot) => {
+    const winnerData = snapshot.val();
+    if (winnerData) {
+        document.getElementById('winner-announcement').innerText = winnerData.name + " GOT BINGO!";
+        document.getElementById('winner-announcement').style.color = winnerData.color;
+        document.getElementById('winner-overlay').style.display = 'flex';
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: [winnerData.color] });
+        if (isAdmin) document.getElementById('admin-next-round').style.display = 'block';
     }
-};
-
-onValue(ref(db, 'gameState/currentNumber'), (snapshot) => {
-    const num = snapshot.val();
-    if (num) document.getElementById('current-number').innerText = num;
 });
 
-onValue(ref(db, 'players'), (snapshot) => {
+window.claimBingo = function() {
+    set(ref(db, 'gameState/lastWinner'), { name: myName, color: myColor });
+    update(ref(db, 'players/' + myName), { totalScore: increment(10) });
+    document.getElementById('bingo-btn').disabled = true;
+};
+
+// Leaderboard with color markers
+onValue(ref(db, 'players'), (s) => {
     const list = document.getElementById('score-list');
     list.innerHTML = "";
-    const players = snapshot.val();
+    const players = s.val();
     if(players) {
         Object.values(players).sort((a,b) => b.totalScore - a.totalScore).forEach(p => {
-            list.innerHTML += `<li><span>${p.name}</span> <span>${p.totalScore} pts</span></li>`;
+            list.innerHTML += `<li>
+                <span style="border-left: 10px solid ${p.color}; padding-left: 8px;">${p.name}</span> 
+                <span>${p.totalScore} pts</span>
+            </li>`;
         });
     }
 });
+
+// ... [Keep other host/admin functions] ...
+window.callNextNumber = async function() {
+    const historyRef = ref(db, 'gameState/history');
+    const snap = await get(historyRef);
+    let history = snap.val() || [];
+    let nextNum;
+    do { nextNum = Math.floor(Math.random() * 75) + 1; } while (history.includes(nextNum));
+    history.push(nextNum);
+    set(ref(db, 'gameState/currentNumber'), nextNum);
+    set(historyRef, history);
+};
