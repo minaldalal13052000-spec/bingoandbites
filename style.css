@@ -1,0 +1,49 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    display: flex;
+    justify-content: center;
+    background-color: #f0f2f5;
+}
+
+.game-container {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    max-width: 500px;
+    margin: 20px auto;
+}
+
+.cell {
+    width: 80px;
+    height: 80px;
+    border: 2px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s;
+    user-select: none;
+}
+
+.cell:hover {
+    background-color: #e8f0fe;
+}
+
+/* Style for when a cell is clicked */
+.cell.stamped {
+    background-color: #4CAF50;
+    color: white;
+    text-decoration: line-through;
+}
+
+.free-space {
+    background-color: #ffd700 !important;
+    color: #333 !important;
+}
