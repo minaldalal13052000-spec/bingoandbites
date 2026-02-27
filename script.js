@@ -19,11 +19,12 @@ const isAdmin = new URLSearchParams(window.location.search).get('admin') === 'tr
 
 if (isAdmin) document.getElementById('admin-controls').style.display = 'block';
 
+// --- CALLER LOGIC ---
 window.callNextNumber = async function() {
     const historyRef = ref(db, 'gameState/history');
     const snap = await get(historyRef);
     let history = snap.val() || [];
-    if (history.length >= 75) return alert("All numbers called!");
+    if (history.length >= 75) return alert("Game Over!");
     let nextNum;
     do { nextNum = Math.floor(Math.random() * 75) + 1; } while (history.includes(nextNum));
     history.push(nextNum);
@@ -31,6 +32,7 @@ window.callNextNumber = async function() {
     set(historyRef, history);
 };
 
+// --- PLAYER LOGIC ---
 window.startGame = function() {
     myName = document.getElementById('username').value.trim();
     if(!myName) return;
@@ -56,12 +58,16 @@ function generateBoard() {
     });
 }
 
+// THE BIG WIN
 window.claimBingo = function() {
+    // 1. Tell Firebase we won
     set(ref(db, 'gameState/lastWinner'), myName);
+    // 2. Add points
     update(ref(db, 'players/' + myName), { totalScore: increment(10) });
     document.getElementById('bingo-btn').disabled = true;
 };
 
+// --- GLOBAL SYNC ---
 onValue(ref(db, 'gameState/lastWinner'), (snapshot) => {
     const winner = snapshot.val();
     if (winner) {
@@ -76,6 +82,7 @@ window.startNextRound = function() {
     set(ref(db, 'gameState/lastWinner'), null);
     set(ref(db, 'gameState/history'), []);
     set(ref(db, 'gameState/currentNumber'), "--");
+    // This tells all clients to reset for the next round
     set(ref(db, 'gameState/roundSignal'), Date.now()); 
 };
 
@@ -92,8 +99,8 @@ onValue(ref(db, 'gameState/roundSignal'), () => {
     }
 });
 
+// Leaderboard and Number listeners stay the same as previous version...
 onValue(ref(db, 'gameState/currentNumber'), (s) => { if(s.val()) document.getElementById('current-number').innerText = s.val(); });
-
 onValue(ref(db, 'players'), (s) => {
     const list = document.getElementById('score-list');
     list.innerHTML = "";
