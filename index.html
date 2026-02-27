@@ -12,34 +12,29 @@
     <div id="winner-overlay" class="overlay" style="display:none;">
         <div class="overlay-content">
             <h2 id="winner-announcement">BINGO!</h2>
-            <p>Verification in progress...</p>
+            <p>Wait for Minal to verify the board...</p>
         </div>
     </div>
 
     <div class="mobile-wrapper">
         <header>
-            <h1>Bingo & Bites</h1>
+            <div class="logo-area">
+                <h1>Bingo & Bites</h1>
+                <p class="tagline">at Minal's Kitchen</p>
+            </div>
             <div id="host-display" class="current-call">
                 <small>NOW CALLING</small>
                 <div id="current-number">--</div>
             </div>
-            <div id="admin-controls" style="display:none;">
+            <div id="admin-controls" style="display:none; text-align:center;">
                 <button onclick="callNextNumber()" class="btn-main" style="background: var(--orange);">DRAW NUMBER</button>
+                <button onclick="resetGame()" style="background:#333; color:white; border:none; padding:5px; border-radius:5px; font-size:10px; margin-top:5px;">FULL SYSTEM RESET</button>
             </div>
         </header>
 
         <div id="setup" class="mobile-card">
             <h2>Welcome!</h2>
             <input type="text" id="username" placeholder="Name..." maxlength="15">
-            
-            <p style="margin-top:15px; font-weight:bold;">Pick Your Stamp Color:</p>
-            <div class="color-picker">
-                <input type="radio" name="pColor" value="#FF2E63" id="c1" checked><label for="c1" style="background:#FF2E63;"></label>
-                <input type="radio" name="pColor" value="#F37121" id="c2"><label for="c2" style="background:#F37121;"></label>
-                <input type="radio" name="pColor" value="#4CAF50" id="c3"><label for="c3" style="background:#4CAF50;"></label>
-                <input type="radio" name="pColor" value="#9C27B0" id="c4"><label for="c4" style="background:#9C27B0;"></label>
-            </div>
-
             <button onclick="startGame()" class="btn-main">JOIN GAME</button>
         </div>
 
@@ -49,13 +44,14 @@
                 <button id="bingo-btn" onclick="claimBingo()" class="btn-win">BINGO!</button>
             </div>
             <div id="bingo-board" class="mobile-grid"></div>
+            
             <div id="admin-next-round" style="display:none; margin-top:10px;">
                 <button onclick="startNextRound()" class="btn-main" style="background: var(--teal);">START NEXT ROUND</button>
             </div>
         </div>
 
         <div class="leaderboard-drawer">
-            <h3>Leaderboard</h3>
+            <h3>Leaderboard (Total Score)</h3>
             <ul id="score-list"></ul>
         </div>
     </div>
