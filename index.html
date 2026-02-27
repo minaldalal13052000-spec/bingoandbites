@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bingo and Bites</title>
+    <title>Minal's Bingo Mobile</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@700&display=swap" rel="stylesheet">
 </head>
@@ -14,9 +14,14 @@
                 <h1>Bingo & Bites</h1>
                 <p class="tagline">at Minal's Kitchen</p>
             </div>
+            
             <div id="host-display" class="current-call">
                 <small>NOW CALLING</small>
                 <div id="current-number">--</div>
+            </div>
+
+            <div id="admin-controls" style="display:none; margin-bottom: 20px;">
+                <button onclick="callNextNumber()" class="btn-main" style="background: var(--orange);">DRAW NUMBER</button>
             </div>
         </header>
 
@@ -40,7 +45,6 @@
             <ul id="score-list"></ul>
         </div>
     </div>
-
     <script type="module" src="script.js"></script>
 </body>
 </html>
