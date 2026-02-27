@@ -9,32 +9,34 @@
     
     <style>
         :root { --teal: #1A535C; --pink: #FF2E63; --cream: #FFF9E7; --orange: #F37121; }
-        body { margin: 0; padding: 0; background-color: var(--teal); font-family: 'Quicksand', sans-serif; color: var(--teal); }
+        body { margin: 0; padding: 0; background-color: var(--teal); font-family: 'Quicksand', sans-serif; color: var(--teal); overflow-x: hidden; }
         .mobile-wrapper { display: flex; flex-direction: column; align-items: center; padding: 10px; min-height: 100vh; box-sizing: border-box; }
-        header { text-align: center; width: 100%; color: var(--cream); margin-bottom: 10px; }
+        header { text-align: center; width: 100%; color: var(--cream); margin-bottom: 5px; }
         h1 { font-family: 'Fredoka One', cursive; color: var(--pink); font-size: 2.2rem; margin: 5px 0; }
         .current-call { background: var(--cream); padding: 8px; border-radius: 15px; border: 4px solid var(--orange); width: 100px; margin: 10px auto; text-align: center; }
         #current-number { font-size: 2.2rem; font-family: 'Fredoka One'; color: var(--pink); }
         .mobile-card { background: var(--cream); padding: 20px; border-radius: 20px; width: 95%; max-width: 400px; text-align: center; box-sizing: border-box; }
         .mobile-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; width: 100%; max-width: 380px; margin: 10px 0; }
         .cell { aspect-ratio: 1/1; background: white; border: 2px solid var(--teal); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; cursor: pointer; }
-        .cell.stamped { background: var(--orange) !important; color: white !important; border-color: var(--pink); }
-        .btn-main { background: var(--pink); color: white; border: none; padding: 12px; border-radius: 50px; font-family: 'Fredoka One'; font-size: 1.1rem; width: 100%; cursor: pointer; margin-top: 10px; }
-        .btn-win { background: var(--pink); color: white; border: none; padding: 8px 15px; border-radius: 10px; font-family: 'Fredoka One'; }
-        .round-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; background: var(--cream); padding: 8px; border-radius: 10px; box-sizing: border-box; margin-bottom: 5px; }
+        .cell.stamped { background: var(--orange) !important; color: white !important; }
+        .btn-main { background: var(--pink); color: white; border: none; padding: 15px; border-radius: 50px; font-family: 'Fredoka One'; font-size: 1.2rem; width: 100%; cursor: pointer; margin-top: 10px; }
+        .btn-win { background: var(--pink); color: white; border: none; padding: 8px 15px; border-radius: 10px; font-family: 'Fredoka One'; font-size: 1rem; }
+        .btn-win:disabled { background: #999; }
+        .round-bar { display: flex; justify-content: space-between; align-items: center; width: 100%; background: var(--cream); padding: 10px; border-radius: 10px; box-sizing: border-box; }
         .leaderboard-drawer { width: 95%; background: rgba(255, 255, 255, 0.1); border-radius: 15px; padding: 15px; color: white; margin-top: 15px; box-sizing: border-box; }
         #score-list { list-style: none; padding: 0; margin: 0; }
         #score-list li { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(26, 83, 92, 0.95); display: none; justify-content: center; align-items: center; z-index: 1000; }
-        .overlay-content { background: var(--cream); padding: 30px; border-radius: 20px; border: 8px solid var(--orange); text-align: center; width: 80%; }
-        input { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #ccc; font-size: 1rem; box-sizing: border-box; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(26, 83, 92, 0.9); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .overlay-content { background: var(--cream); padding: 30px; border-radius: 20px; border: 8px solid var(--orange); text-align: center; width: 85%; }
+        input { width: 100%; padding: 12px; border-radius: 10px; border: 2px solid var(--teal); font-size: 1rem; box-sizing: border-box; }
     </style>
 </head>
 <body>
     <div id="winner-overlay" class="overlay">
         <div class="overlay-content">
-            <h2 id="winner-announcement" style="font-family:'Fredoka One'; color:var(--pink);">BINGO!</h2>
-            <p>Wait for Minal to verify...</p>
+            <h2 id="winner-announcement" style="font-family:'Fredoka One'; color:var(--pink); font-size: 2rem;">BINGO!</h2>
+            <p>Ready for the next round?</p>
+            <button onclick="startNextRound()" class="btn-main" style="background:var(--teal);">START NEXT ROUND</button>
         </div>
     </div>
 
@@ -42,8 +44,8 @@
         <header>
             <h1>Bingo & Bites</h1>
             <div class="current-call"><small>CALLING</small><div id="current-number">--</div></div>
-            <div id="admin-controls" style="display:none;">
-                <button onclick="callNextNumber()" class="btn-main" style="background:var(--orange);">DRAW NUMBER</button>
+            <div id="admin-controls" style="display:none; margin-bottom: 10px;">
+                <button onclick="callNextNumber()" class="btn-main" style="background:var(--orange); margin: 0;">DRAW NUMBER</button>
             </div>
         </header>
 
@@ -52,19 +54,16 @@
             <button onclick="startGame()" class="btn-main">JOIN GAME</button>
         </div>
 
-        <div id="game-area" style="display:none; width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div id="game-area" style="display:none; width: 100%; flex-direction: column; align-items: center;">
             <div class="round-bar">
-                <span id="round-title" style="font-weight:bold;">ROUND 1</span>
+                <span id="round-text" style="font-weight:bold;">ROUND 1</span>
                 <button id="bingo-btn" onclick="claimBingo()" class="btn-win">BINGO!</button>
             </div>
             <div id="bingo-board" class="mobile-grid"></div>
-            <div id="admin-next-round" style="display:none; width: 95%;">
-                <button onclick="startNextRound()" class="btn-main" style="background:var(--teal);">NEXT ROUND</button>
-            </div>
         </div>
 
         <div class="leaderboard-drawer">
-            <h3 style="margin-top:0;">Leaderboard</h3>
+            <h3 style="margin-top:0;">Leaderboard (Total Score)</h3>
             <ul id="score-list"></ul>
         </div>
     </div>
@@ -94,7 +93,7 @@
         window.startGame = function() {
             myName = document.getElementById('username').value.trim();
             if(!myName) return alert("Enter name!");
-            db.ref('players/' + myName).set({ name: myName, totalScore: 0 });
+            db.ref('players/' + myName).update({ name: myName, totalScore: 0 });
             document.getElementById('setup').style.display = 'none';
             document.getElementById('game-area').style.display = 'flex';
             generateBoard();
@@ -107,14 +106,14 @@
             items.forEach((item, index) => {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
-                if (index === 12) {
-                    cell.innerText = "FREE";
-                    cell.classList.add('stamped');
-                } else {
+                if (index === 12) { cell.innerText = "FREE"; cell.classList.add('stamped'); }
+                else {
                     cell.innerText = item;
                     cell.onclick = function() { 
-                        this.classList.toggle('stamped');
-                        if(navigator.vibrate) navigator.vibrate(40);
+                        if (!document.getElementById('bingo-btn').disabled) {
+                            this.classList.toggle('stamped');
+                            if(navigator.vibrate) navigator.vibrate(40);
+                        }
                     };
                 }
                 board.appendChild(cell);
@@ -124,6 +123,7 @@
         window.callNextNumber = function() {
             db.ref('gameState/history').get().then((snap) => {
                 let history = snap.val() || [];
+                if (history.length >= 75) return alert("All numbers called!");
                 let nextNum;
                 do { nextNum = Math.floor(Math.random() * 75) + 1; } while (history.includes(nextNum));
                 history.push(nextNum);
@@ -137,6 +137,7 @@
             document.getElementById('bingo-btn').disabled = true;
         };
 
+        // This is now triggered by the player clicking the button on the overlay
         window.startNextRound = function() {
             db.ref('gameState').update({ lastWinner: null, history: [], currentNumber: "--", roundSignal: Date.now() });
         };
@@ -151,20 +152,20 @@
             if (winner) {
                 document.getElementById('winner-announcement').innerText = winner + " GOT BINGO!";
                 overlay.style.display = 'flex';
-                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-                if (isAdmin) document.getElementById('admin-next-round').style.display = 'block';
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             } else {
                 overlay.style.display = 'none';
             }
         });
 
         db.ref('gameState/roundSignal').on('value', () => {
-            if (myName && document.getElementById('winner-overlay').style.display === 'flex') {
+            if (myName) {
                 currentRound++;
-                document.getElementById('round-title').innerText = "ROUND " + currentRound;
-                document.getElementById('bingo-btn').disabled = false;
-                document.getElementById('admin-next-round').style.display = 'none';
-                generateBoard();
+                if (currentRound <= 4) {
+                    document.getElementById('round-text').innerText = "ROUND " + currentRound;
+                    document.getElementById('bingo-btn').disabled = false;
+                    generateBoard();
+                }
             }
         });
 
@@ -178,8 +179,6 @@
                 });
             }
         });
-
-        window.resetGame = () => { if(confirm("Reset everything?")) db.ref().set(null).then(() => location.reload()); };
     </script>
 </body>
 </html>
